@@ -72,9 +72,14 @@ sigamp = 1
 while True:
     P_avg = zmq_measure(socket1,PRINT_MEASUREMENTS)
     print(f"	Average Power: {P_avg:.4}")
-    if (P_avg > 0.4):
+    if (P_avg > 1.0):
         sigamp = sigamp * 0.9
         xc.set_sig_amp(sigamp)
+        print(f"	Signal Amplitude Adjusted to: {sigamp:.4}")
+    elif (P_avg < 0.5):
+        sigamp = sigamp * 1.2
+        xc.set_sig_amp(sigamp)
+        print(f"	Signal Amplitude Adjusted to: {sigamp:.4}")
     time.sleep(t_pause)
 
 
