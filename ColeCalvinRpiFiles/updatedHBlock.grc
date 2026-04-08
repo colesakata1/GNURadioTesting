@@ -46,7 +46,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [808, 672.0]
+    coordinate: [384, 232.0]
     rotation: 0
     state: enabled
 - name: blocks_moving_average_xx_0
@@ -66,7 +66,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1008, 668.0]
+    coordinate: [584, 228.0]
     rotation: 0
     state: enabled
 - name: ma_len
@@ -101,7 +101,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1240, 624.0]
+    coordinate: [816, 188.0]
     rotation: 0
     state: enabled
 - name: pad_source_0
@@ -121,7 +121,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [552, 688.0]
+    coordinate: [128, 252.0]
     rotation: 0
     state: enabled
 
