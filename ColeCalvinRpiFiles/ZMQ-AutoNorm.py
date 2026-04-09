@@ -89,9 +89,9 @@ def main(argv):
     
     if debug == 1:
       if u_set == 1:
-         print ('Upper Limit before AGC: ', carrier_freq)
+         print ('Upper Limit before AGC: ', upperlim)
       if l_set == 1:
-         print ('Lower Limit before AGC: ', tone_freq)
+         print ('Lower Limit before AGC: ', lowerlim)
 
 
 
