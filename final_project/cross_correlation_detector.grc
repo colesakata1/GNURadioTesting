@@ -1,0 +1,939 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: >
+      Two sinusoidal sources at different frequencies are summed with AWGN noise.
+      A cross-correlation (matched-filter) detector determines whether each source
+      is actively transmitting. Toggle source amplitudes with the sliders to observe
+      the correlation outputs change in real time.
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    hier_block_src_path: '.:'
+    id: cross_correlation_detector
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Two-Source Cross-Correlation Detector
+    window_size: (1280,1024)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+# ──────────────────────────────────────────────────────────────────────────────
+# VARIABLES
+# ──────────────────────────────────────────────────────────────────────────────
+
+blocks:
+
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: 'Sample rate (Hz)'
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+
+- name: freq1
+  id: variable
+  parameters:
+    comment: 'Source 1 carrier frequency (Hz)'
+    value: '1000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [304, 12]
+    rotation: 0
+    state: enabled
+
+- name: freq2
+  id: variable
+  parameters:
+    comment: 'Source 2 carrier frequency (Hz)'
+    value: '5000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [424, 12]
+    rotation: 0
+    state: enabled
+
+# ── Interactive sliders ──────────────────────────────────────────────────────
+
+- name: src1_amp
+  id: variable_qtgui_range
+  parameters:
+    comment: 'Source 1 amplitude (0 = off)'
+    gui_hint: 0,0,1,1
+    label: 'Source 1 Amplitude (1 kHz)'
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.05'
+    stop: '1'
+    value: '1'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [544, 12]
+    rotation: 0
+    state: enabled
+
+- name: src2_amp
+  id: variable_qtgui_range
+  parameters:
+    comment: 'Source 2 amplitude (0 = off)'
+    gui_hint: 0,1,1,1
+    label: 'Source 2 Amplitude (5 kHz)'
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.05'
+    stop: '1'
+    value: '1'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [720, 12]
+    rotation: 0
+    state: enabled
+
+- name: noise_amp
+  id: variable_qtgui_range
+  parameters:
+    comment: 'AWGN noise standard deviation'
+    gui_hint: 0,2,1,1
+    label: 'Noise Amplitude (AWGN)'
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '0'
+    step: '0.05'
+    stop: '2'
+    value: '0.3'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [896, 12]
+    rotation: 0
+    state: enabled
+
+# ──────────────────────────────────────────────────────────────────────────────
+# TRANSMITTER PATH — Source 1 + Source 2 + Noise  →  Received Signal
+# ──────────────────────────────────────────────────────────────────────────────
+
+- name: analog_sig_source_x_0
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: src1_amp
+    comment: 'Source 1 — 1 kHz sinusoid'
+    freq: freq1
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: float
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 200]
+    rotation: 0
+    state: enabled
+
+- name: analog_sig_source_x_1
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: src2_amp
+    comment: 'Source 2 — 5 kHz sinusoid'
+    freq: freq2
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: float
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 320]
+    rotation: 0
+    state: enabled
+
+- name: analog_noise_source_x_0
+  id: analog_noise_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: noise_amp
+    comment: 'Additive White Gaussian Noise'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    noise_type: analog.GR_GAUSSIAN
+    seed: '42'
+    type: float
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 440]
+    rotation: 0
+    state: enabled
+
+# Sum: src1 + src2 + noise → received signal
+- name: blocks_add_xx_0
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Channel: src1 + src2 + AWGN'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '3'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [296, 328]
+    rotation: 0
+    state: enabled
+
+# ──────────────────────────────────────────────────────────────────────────────
+# RECEIVER PATH — Cross-Correlation (Matched Filter) Detectors
+#
+# Method: multiply received signal by a phase-coherent local reference at the
+# target frequency, then low-pass filter to integrate.  The DC output is
+# proportional to the signal component at that frequency.
+# High DC ≈ source present;  near-zero DC ≈ source absent.
+#
+# For robustness to phase offset an IQ correlator is used:
+#   I-branch: rx × cos(2πf·t)  → LPF
+#   Q-branch: rx × sin(2πf·t)  → LPF
+#   Magnitude: sqrt(I² + Q²)   — phase-insensitive detection metric
+# ──────────────────────────────────────────────────────────────────────────────
+
+# ── References for Source 1 (1 kHz) ────────────────────────────────────────
+
+- name: analog_sig_source_ref1_cos
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1.0'
+    comment: 'Local reference: cos(2π·1kHz·t)'
+    freq: freq1
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: float
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 580]
+    rotation: 0
+    state: enabled
+
+- name: analog_sig_source_ref1_sin
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1.0'
+    comment: 'Local reference: sin(2π·1kHz·t)'
+    freq: freq1
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '1.5707963267948966'
+    samp_rate: samp_rate
+    type: float
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 660]
+    rotation: 0
+    state: enabled
+
+# ── References for Source 2 (5 kHz) ────────────────────────────────────────
+
+- name: analog_sig_source_ref2_cos
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1.0'
+    comment: 'Local reference: cos(2π·5kHz·t)'
+    freq: freq2
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: float
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 780]
+    rotation: 0
+    state: enabled
+
+- name: analog_sig_source_ref2_sin
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1.0'
+    comment: 'Local reference: sin(2π·5kHz·t)'
+    freq: freq2
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '1.5707963267948966'
+    samp_rate: samp_rate
+    type: float
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [48, 860]
+    rotation: 0
+    state: enabled
+
+# ── Multipliers (rx × reference) ───────────────────────────────────────────
+
+- name: blocks_multiply_corr1_i
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Corr1-I: rx × cos_ref1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 560]
+    rotation: 0
+    state: enabled
+
+- name: blocks_multiply_corr1_q
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Corr1-Q: rx × sin_ref1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 640]
+    rotation: 0
+    state: enabled
+
+- name: blocks_multiply_corr2_i
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Corr2-I: rx × cos_ref2'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 760]
+    rotation: 0
+    state: enabled
+
+- name: blocks_multiply_corr2_q
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Corr2-Q: rx × sin_ref2'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: float
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 840]
+    rotation: 0
+    state: enabled
+
+# ── Low-Pass Integration Filters ─────────────────────────────────────────────
+# Cutoff well below the lowest signal frequency so only the baseband
+# (DC correlation) component passes through.
+
+- name: low_pass_filter_c1i
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: 'Integrate I-branch, Src1'
+    cutoff_freq: '100'
+    decim: '1'
+    gain: '2'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    type: fir_filter_fff
+    width: '50'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 544]
+    rotation: 0
+    state: enabled
+
+- name: low_pass_filter_c1q
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: 'Integrate Q-branch, Src1'
+    cutoff_freq: '100'
+    decim: '1'
+    gain: '2'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    type: fir_filter_fff
+    width: '50'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 624]
+    rotation: 0
+    state: enabled
+
+- name: low_pass_filter_c2i
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: 'Integrate I-branch, Src2'
+    cutoff_freq: '100'
+    decim: '1'
+    gain: '2'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    type: fir_filter_fff
+    width: '50'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 744]
+    rotation: 0
+    state: enabled
+
+- name: low_pass_filter_c2q
+  id: low_pass_filter
+  parameters:
+    affinity: ''
+    alias: ''
+    beta: '6.76'
+    comment: 'Integrate Q-branch, Src2'
+    cutoff_freq: '100'
+    decim: '1'
+    gain: '2'
+    interp: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    type: fir_filter_fff
+    width: '50'
+    win: window.WIN_HAMMING
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 824]
+    rotation: 0
+    state: enabled
+
+# ── Square-and-sum for phase-insensitive magnitude ───────────────────────────
+# blocks_float_to_complex + blocks_complex_to_mag is the standard GR idiom.
+
+- name: blocks_float_to_complex_1
+  id: blocks_float_to_complex
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Pack I+Q for Src1 correlator'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [912, 576]
+    rotation: 0
+    state: enabled
+
+- name: blocks_float_to_complex_2
+  id: blocks_float_to_complex
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Pack I+Q for Src2 correlator'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [912, 776]
+    rotation: 0
+    state: enabled
+
+- name: blocks_complex_to_mag_1
+  id: blocks_complex_to_mag
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Detection metric — Src1: high = transmitting'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1088, 580]
+    rotation: 0
+    state: enabled
+
+- name: blocks_complex_to_mag_2
+  id: blocks_complex_to_mag
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'Detection metric — Src2: high = transmitting'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1088, 780]
+    rotation: 0
+    state: enabled
+
+# ──────────────────────────────────────────────────────────────────────────────
+# DISPLAY SINKS
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Time-domain view of the received (noisy) signal
+- name: qtgui_time_sink_received
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    alpha10: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    color10: dark blue
+    comment: ''
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'True'
+    gui_hint: 1,0,1,3
+    label1: 'Received (Src1+Src2+Noise)'
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    label10: ''
+    legend: 'True'
+    marker1: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    marker10: '-1'
+    name: '"Received Signal"'
+    nconnections: '1'
+    size: '2048'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    style10: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    width10: '1'
+    ylabel: Amplitude
+    ymax: '3'
+    ymin: '-3'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [700, 300]
+    rotation: 0
+    state: enabled
+
+# Frequency-domain view of the received signal
+- name: qtgui_freq_sink_received
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    alpha10: '1.0'
+    autoscale: 'False'
+    average: '0.2'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    color10: '"dark blue"'
+    comment: ''
+    ctrlpanel: 'False'
+    fc: '0'
+    fftsize: '2048'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: 2,0,1,3
+    label: Relative Gain
+    label1: 'Received Signal'
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    label10: ''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Frequency Spectrum of Received Signal"'
+    nconnections: '1'
+    norm_window: 'False'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: float
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    width10: '1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+    ymax: '10'
+    ymin: '-120'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [700, 420]
+    rotation: 0
+    state: enabled
+
+# Detection metric time sink (both channels together)
+- name: qtgui_time_sink_corr
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    alpha10: '1.0'
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    color10: dark blue
+    comment: ''
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'True'
+    gui_hint: 3,0,1,3
+    label1: 'Corr Magnitude — Source 1 (1 kHz)'
+    label2: 'Corr Magnitude — Source 2 (5 kHz)'
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    label10: ''
+    legend: 'True'
+    marker1: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    marker10: '-1'
+    name: '"Cross-Correlation Detection Metric  (high = source transmitting)"'
+    nconnections: '2'
+    size: '2048'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    style10: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '2'
+    width2: '2'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    width10: '1'
+    ylabel: Correlation Magnitude
+    ymax: '1.2'
+    ymin: '0'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1260, 676]
+    rotation: 0
+    state: enabled
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CONNECTIONS
+# ──────────────────────────────────────────────────────────────────────────────
+
+connections:
+# ── Transmitter path ──────────────────────────────────────────────────────────
+- [analog_sig_source_x_0, '0', blocks_add_xx_0, '0']
+- [analog_sig_source_x_1, '0', blocks_add_xx_0, '1']
+- [analog_noise_source_x_0, '0', blocks_add_xx_0, '2']
+
+# ── Display received signal ───────────────────────────────────────────────────
+- [blocks_add_xx_0, '0', qtgui_time_sink_received, '0']
+- [blocks_add_xx_0, '0', qtgui_freq_sink_received, '0']
+
+# ── Cross-correlator for Source 1 ─────────────────────────────────────────────
+# I-branch
+- [blocks_add_xx_0, '0', blocks_multiply_corr1_i, '0']
+- [analog_sig_source_ref1_cos, '0', blocks_multiply_corr1_i, '1']
+- [blocks_multiply_corr1_i, '0', low_pass_filter_c1i, '0']
+- [low_pass_filter_c1i, '0', blocks_float_to_complex_1, '0']
+
+# Q-branch
+- [blocks_add_xx_0, '0', blocks_multiply_corr1_q, '0']
+- [analog_sig_source_ref1_sin, '0', blocks_multiply_corr1_q, '1']
+- [blocks_multiply_corr1_q, '0', low_pass_filter_c1q, '0']
+- [low_pass_filter_c1q, '0', blocks_float_to_complex_1, '1']
+
+# Magnitude
+- [blocks_float_to_complex_1, '0', blocks_complex_to_mag_1, '0']
+- [blocks_complex_to_mag_1, '0', qtgui_time_sink_corr, '0']
+
+# ── Cross-correlator for Source 2 ─────────────────────────────────────────────
+# I-branch
+- [blocks_add_xx_0, '0', blocks_multiply_corr2_i, '0']
+- [analog_sig_source_ref2_cos, '0', blocks_multiply_corr2_i, '1']
+- [blocks_multiply_corr2_i, '0', low_pass_filter_c2i, '0']
+- [low_pass_filter_c2i, '0', blocks_float_to_complex_2, '0']
+
+# Q-branch
+- [blocks_add_xx_0, '0', blocks_multiply_corr2_q, '0']
+- [analog_sig_source_ref2_sin, '0', blocks_multiply_corr2_q, '1']
+- [blocks_multiply_corr2_q, '0', low_pass_filter_c2q, '0']
+- [low_pass_filter_c2q, '0', blocks_float_to_complex_2, '1']
+
+# Magnitude
+- [blocks_float_to_complex_2, '0', blocks_complex_to_mag_2, '0']
+- [blocks_complex_to_mag_2, '0', qtgui_time_sink_corr, '1']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.2
