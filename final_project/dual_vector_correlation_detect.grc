@@ -1,0 +1,802 @@
+options:
+  parameters:
+    author: Claude
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: Transmit two different vectors at different frequencies, add AWGN,
+      then cross-correlate to detect each vector.
+    gen_cmake: 'On'
+    gen_linking: subprocess
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: dual_vector_correlation_detect
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Dual Vector Correlation Detector
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '1000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 12]
+    rotation: 0
+    state: enabled
+- name: f1
+  id: variable
+  parameters:
+    comment: Carrier offset for vector 1
+    value: '100000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [296, 12]
+    rotation: 0
+    state: enabled
+- name: f2
+  id: variable
+  parameters:
+    comment: Carrier offset for vector 2
+    value: '-150000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [368, 12]
+    rotation: 0
+    state: enabled
+- name: noise_amp
+  id: variable
+  parameters:
+    comment: AWGN amplitude
+    value: '0.3'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [440, 12]
+    rotation: 0
+    state: enabled
+- name: vec1
+  id: variable
+  parameters:
+    comment: 13-bit Barker code
+    value: '[1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1]'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [536, 12]
+    rotation: 0
+    state: enabled
+- name: vec2
+  id: variable
+  parameters:
+    comment: 11-bit Barker code (different, orthogonal-ish)
+    value: '[1, 1, 1, -1, -1, -1, 1, -1, -1, 1, -1]'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 12]
+    rotation: 0
+    state: enabled
+- name: threshold
+  id: variable
+  parameters:
+    comment: Detection threshold (tune based on vector length & noise)
+    value: '8.0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [872, 12]
+    rotation: 0
+    state: enabled
+
+# ---------------- Transmitter side ----------------
+
+- name: vector_source_1
+  id: blocks_vector_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Repeats vector 1 indefinitely
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    repeat: 'True'
+    tags: '[]'
+    type: complex
+    vector: vec1
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [40, 140]
+    rotation: 0
+    state: enabled
+- name: vector_source_2
+  id: blocks_vector_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Repeats vector 2 indefinitely
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    repeat: 'True'
+    tags: '[]'
+    type: complex
+    vector: vec2
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [40, 300]
+    rotation: 0
+    state: enabled
+
+- name: sig_source_f1
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1'
+    comment: Carrier 1
+    freq: f1
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: complex
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [40, 220]
+    rotation: 0
+    state: enabled
+- name: sig_source_f2
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1'
+    comment: Carrier 2
+    freq: f2
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: complex
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [40, 380]
+    rotation: 0
+    state: enabled
+
+- name: mixer_1
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Shift vector 1 to f1
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 168]
+    rotation: 0
+    state: enabled
+- name: mixer_2
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Shift vector 2 to f2
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [280, 328]
+    rotation: 0
+    state: enabled
+
+- name: adder_signals
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Sum the two transmitted signals
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 248]
+    rotation: 0
+    state: enabled
+
+# ---------------- Channel: AWGN ----------------
+
+- name: noise_source
+  id: analog_noise_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: noise_amp
+    comment: AWGN channel
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    noise_type: analog.GR_GAUSSIAN
+    seed: '42'
+    type: complex
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [480, 392]
+    rotation: 0
+    state: enabled
+
+- name: adder_noise
+  id: blocks_add_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Add noise to combined signal
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [680, 280]
+    rotation: 0
+    state: enabled
+
+# ---------------- Receiver: two matched filter branches ----------------
+# Each branch shifts the received signal back by -fi, then correlates against
+# the (time-reversed, conjugated) reference vector. The FIR Filter block
+# implements correlation when its taps are set to the conjugated, reversed vector.
+
+- name: sig_source_neg_f1
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1'
+    comment: Downshift by f1
+    freq: -f1
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: complex
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [680, 480]
+    rotation: 0
+    state: enabled
+- name: sig_source_neg_f2
+  id: analog_sig_source_x
+  parameters:
+    affinity: ''
+    alias: ''
+    amp: '1'
+    comment: Downshift by f2
+    freq: -f2
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    offset: '0'
+    phase: '0'
+    samp_rate: samp_rate
+    type: complex
+    waveform: analog.GR_COS_WAVE
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [680, 640]
+    rotation: 0
+    state: enabled
+
+- name: downmix_1
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [880, 432]
+    rotation: 0
+    state: enabled
+- name: downmix_2
+  id: blocks_multiply_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '2'
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [880, 592]
+    rotation: 0
+    state: enabled
+
+- name: matched_filter_1
+  id: filter_fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Cross-correlate against vec1 (taps = conj(reverse(vec1)))
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: list(numpy.conj(numpy.array(vec1)[::-1]))
+    type: ccc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1080, 432]
+    rotation: 0
+    state: enabled
+- name: matched_filter_2
+  id: filter_fir_filter_xxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Cross-correlate against vec2 (taps = conj(reverse(vec2)))
+    decim: '1'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_delay: '0'
+    taps: list(numpy.conj(numpy.array(vec2)[::-1]))
+    type: ccc
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1080, 592]
+    rotation: 0
+    state: enabled
+
+- name: import_numpy
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: import numpy
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [992, 12]
+    rotation: 0
+    state: enabled
+
+- name: mag_1
+  id: blocks_complex_to_mag
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'abs(correlation)'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1280, 444]
+    rotation: 0
+    state: enabled
+- name: mag_2
+  id: blocks_complex_to_mag
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: 'abs(correlation)'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1280, 604]
+    rotation: 0
+    state: enabled
+
+- name: threshold_det_1
+  id: blocks_threshold_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Vector 1 detected when output = 1
+    high: threshold
+    init: '0'
+    low: threshold
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1448, 444]
+    rotation: 0
+    state: enabled
+- name: threshold_det_2
+  id: blocks_threshold_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: Vector 2 detected when output = 1
+    high: threshold
+    init: '0'
+    low: threshold
+    maxoutbuf: '0'
+    minoutbuf: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1448, 604]
+    rotation: 0
+    state: enabled
+
+# ---------------- GUI / Sinks ----------------
+
+- name: qtgui_freq_sink
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    average: '1.0'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: View transmitted spectrum
+    ctrlpanel: 'False'
+    fc: '0'
+    fftsize: '1024'
+    freqhalf: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label: Relative Gain
+    label1: 'Tx + Noise'
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Received Spectrum (with noise)"'
+    nconnections: '1'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+    ymax: '10'
+    ymin: '-140'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [880, 168]
+    rotation: 0
+    state: enabled
+
+- name: qtgui_time_sink_corr
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: Magnitude of correlation outputs
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: '|corr vec1|'
+    label10: Signal 10
+    label2: '|corr vec2|'
+    label3: Signal 3
+    label4: Signal 4
+    label5: Signal 5
+    label6: Signal 6
+    label7: Signal 7
+    label8: Signal 8
+    label9: Signal 9
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"Cross-Correlation Outputs"'
+    nconnections: '2'
+    size: '2048'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Magnitude
+    ymax: '20'
+    ymin: '0'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1448, 168]
+    rotation: 0
+    state: enabled
+
+- name: qtgui_time_sink_detect
+  id: qtgui_time_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    autoscale: 'False'
+    axislabels: 'True'
+    color1: blue
+    color10: dark blue
+    color2: red
+    color3: green
+    color4: black
+    color5: cyan
+    color6: magenta
+    color7: yellow
+    color8: dark red
+    color9: dark green
+    comment: Binary detection flags
+    ctrlpanel: 'False'
+    entags: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label1: vec1 detected
+    label10: ''
+    label2: vec2 detected
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    marker1: '-1'
+    marker10: '-1'
+    marker2: '-1'
+    marker3: '-1'
+    marker4: '-1'
+    marker5: '-1'
+    marker6: '-1'
+    marker7: '-1'
+    marker8: '-1'
+    marker9: '-1'
+    name: '"Detection Flags"'
+    nconnections: '2'
+    size: '2048'
+    srate: samp_rate
+    stemplot: 'False'
+    style1: '1'
+    style10: '1'
+    style2: '1'
+    style3: '1'
+    style4: '1'
+    style5: '1'
+    style6: '1'
+    style7: '1'
+    style8: '1'
+    style9: '1'
+    tr_chan: '0'
+    tr_delay: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_slope: qtgui.TRIG_SLOPE_POS
+    tr_tag: '""'
+    type: float
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    ylabel: Detected
+    ymax: '1.5'
+    ymin: '-0.2'
+    yunit: '""'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1656, 444]
+    rotation: 0
+    state: enabled
+
+# ---------------- Connections ----------------
+
+connections:
+# TX path
+- [vector_source_1, '0', mixer_1, '0']
+- [sig_source_f1, '0', mixer_1, '1']
+- [vector_source_2, '0', mixer_2, '0']
+- [sig_source_f2, '0', mixer_2, '1']
+- [mixer_1, '0', adder_signals, '0']
+- [mixer_2, '0', adder_signals, '1']
+
+# Add AWGN
+- [adder_signals, '0', adder_noise, '0']
+- [noise_source, '0', adder_noise, '1']
+
+# Spectrum view
+- [adder_noise, '0', qtgui_freq_sink, '0']
+
+# RX branch 1
+- [adder_noise, '0', downmix_1, '0']
+- [sig_source_neg_f1, '0', downmix_1, '1']
+- [downmix_1, '0', matched_filter_1, '0']
+- [matched_filter_1, '0', mag_1, '0']
+- [mag_1, '0', threshold_det_1, '0']
+- [mag_1, '0', qtgui_time_sink_corr, '0']
+- [threshold_det_1, '0', qtgui_time_sink_detect, '0']
+
+# RX branch 2
+- [adder_noise, '0', downmix_2, '0']
+- [sig_source_neg_f2, '0', downmix_2, '1']
+- [downmix_2, '0', matched_filter_2, '0']
+- [matched_filter_2, '0', mag_2, '0']
+- [mag_2, '0', threshold_det_2, '0']
+- [mag_2, '0', qtgui_time_sink_corr, '1']
+- [threshold_det_2, '0', qtgui_time_sink_detect, '1']
+
+metadata:
+  file_format: 1
